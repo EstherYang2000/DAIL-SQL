@@ -1,2 +1,14 @@
 .idea
 .DS_Store
+DAIL-SQL
+dataset/
+__MACOSX/
+__pycache__
+#third_party
+third_party/
+*stanford-corenlp-4.5.7
+# output
+vector_cache/
+results/
+
+*zip

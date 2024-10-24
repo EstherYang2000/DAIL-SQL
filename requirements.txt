@@ -3,11 +3,11 @@ tqdm
 openai
 numpy
 transformers
-torch
+torch=1.11.0
 stanford-corenlp
 sql_metadata
 bpemb
-torchtext
+torchtext==0.12.0
 sentence_transformers
 attrs
 nltk

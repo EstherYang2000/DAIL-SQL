@@ -33,11 +33,11 @@ class CoreNLP:
             os.environ['CORENLP_HOME'] = os.path.abspath(
                 os.path.join(
                     os.path.dirname(__file__),
-                    '../../third_party/stanford-corenlp-full-2018-10-05'))
+                    '../../third_party/stanford-corenlp-4.5.7'))
         if not os.path.exists(os.environ['CORENLP_HOME']):
             raise Exception(
                 f'''Please install Stanford CoreNLP and put it at {os.environ['CORENLP_HOME']}.
-                Direct URL: http://nlp.stanford.edu/software/stanford-corenlp-full-2018-10-05.zip
+                Direct URL: http://nlp.stanford.edu/software/stanford-corenlp-4.5.7.zip
                 Landing page: https://stanfordnlp.github.io/CoreNLP/''')
         self.client = corenlp.CoreNLPClient()
 

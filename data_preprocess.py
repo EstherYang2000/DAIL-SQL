@@ -14,14 +14,28 @@ from utils.datasets.spider import load_tables
 
 
 def schema_linking_producer(test, train, table, db, dataset_dir, compute_cv_link=True):
+    """
+    This function processes schema linking for a given dataset by associating questions with database schemas.
 
-    # load data
+    Args:
+        test (str): The filename of the test data in JSON format.
+        train (str): The filename of the training data in JSON format.
+        table (str): The filename of the table schema JSON file.
+        db (str): The directory name where databases (SQLite files) are stored.
+        dataset_dir (str): The base directory containing the dataset and schemas.
+        compute_cv_link (bool, optional): A flag to indicate whether to compute column-value links. Default is True.
+    
+    Returns:
+        None: The function saves the processed schema-linked data.
+    """
+    # 1. Load test and train data from JSON files located in the dataset directory
     test_data = json.load(open(os.path.join(dataset_dir, test)))
     train_data = json.load(open(os.path.join(dataset_dir, train)))
 
-    # load schemas
+    # 2. Load database schemas from the specified schema file (tables.json)
     schemas, _ = load_tables([os.path.join(dataset_dir, table)])
-
+    
+    # 3. Create in-memory SQLite connections for each database schema to speed up access
     # Backup in-memory copies of all the DBs and create the live connections
     for db_id, schema in tqdm(schemas.items(), desc="DB connections"):
         sqlite_path = Path(dataset_dir) / db / db_id / f"{db_id}.sqlite"
@@ -32,6 +46,7 @@ def schema_linking_producer(test, train, table, db, dataset_dir, compute_cv_link
             source.backup(dest)
         schema.connection = dest
 
+    # 4. Initialize word embeddings using the GloVe pre-trained embeddings (42B version)
     word_emb = GloVe(kind='42B', lemmatize=True)
     linking_processor = SpiderEncoderV2Preproc(dataset_dir,
             min_freq=4,
