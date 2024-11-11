@@ -3,7 +3,7 @@ tqdm
 openai
 numpy
 transformers
-torch=1.11.0
+torch==1.11.0
 stanford-corenlp
 sql_metadata
 bpemb

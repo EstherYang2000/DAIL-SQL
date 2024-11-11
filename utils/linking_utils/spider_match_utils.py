@@ -16,68 +16,74 @@ TAB_EXACT_MATCH_FLAG = "TEM"
 
 # schema linking, similar to IRNet
 def compute_schema_linking(question, column, table):
-    def partial_match(x_list, y_list):
-        x_str = " ".join(x_list)
-        y_str = " ".join(y_list)
-        if x_str in STOPWORDS or x_str in PUNKS:
+    def partial_match(x_list, y_list):# 定義部分匹配函數，檢查 x_list 是否部分匹配 y_list
+        x_str = " ".join(x_list)# 將 x_list 合併成單一字串
+        y_str = " ".join(y_list)# 將 y_list 合併成單一字串
+        if x_str in STOPWORDS or x_str in PUNKS:# 檢查是否為停用詞或標點符號
             return False
+        # 使用正則表達式進行匹配，檢查 x_str 是否為 y_str 的子串
         if re.match(rf"\b{re.escape(x_str)}\b", y_str):
-            assert x_str in y_str
+            assert x_str in y_str # 確保 x_str 是 y_str 的一部分
             return True
         else:
             return False
-
+    # 定義完全匹配函數，檢查 x_list 是否與 y_list 完全相等
     def exact_match(x_list, y_list):
-        x_str = " ".join(x_list)
-        y_str = " ".join(y_list)
-        if x_str == y_str:
+        x_str = " ".join(x_list) # 將 x_list 合併成單一字串
+        y_str = " ".join(y_list) # 將 y_list 合併成單一字串
+        if x_str == y_str: # 若兩者相等，則返回 True
             return True
         else:
             return False
-
+    # 用於儲存問題與欄位的匹配結果
     q_col_match = dict()
+    # 用於儲存問題與表格的匹配結果
     q_tab_match = dict()
-
+    # 建立欄位 ID 與欄位名稱之間的對應
     col_id2list = dict()
     for col_id, col_item in enumerate(column):
-        if col_id == 0:
+        if col_id == 0: # 略過索引為 0 的欄位，通常是預留位
             continue
-        col_id2list[col_id] = col_item
-
+        col_id2list[col_id] = col_item # 儲存欄位 ID 與欄位名稱的對應
+    # 建立表格 ID 與表格名稱之間的對應
     tab_id2list = dict()
     for tab_id, tab_item in enumerate(table):
-        tab_id2list[tab_id] = tab_item
+        tab_id2list[tab_id] = tab_item # 儲存表格 ID 與表格名稱的對應
 
-    # 5-gram
+    # 5-gram # 使用 5-gram 來逐步縮小匹配範圍
     n = 5
     while n > 0:
+        # 對問題中的詞語按 n-gram 進行處理
         for i in range(len(question) - n + 1):
-            n_gram_list = question[i:i + n]
-            n_gram = " ".join(n_gram_list)
-            if len(n_gram.strip()) == 0:
+            n_gram_list = question[i:i + n] # 提取 n-gram
+            n_gram = " ".join(n_gram_list) # 合併成字串
+            if len(n_gram.strip()) == 0: # 若 n_gram 為空，則略過
                 continue
-            # exact match case
+            # exact match case # 完全匹配情況
             for col_id in col_id2list:
-                if exact_match(n_gram_list, col_id2list[col_id]):
-                    for q_id in range(i, i + n):
+                if exact_match(n_gram_list, col_id2list[col_id]): # 若與欄位名稱完全匹配
+                    for q_id in range(i, i + n): # 標記問題中對應位置的匹配標誌
                         q_col_match[f"{q_id},{col_id}"] = COL_EXACT_MATCH_FLAG
             for tab_id in tab_id2list:
-                if exact_match(n_gram_list, tab_id2list[tab_id]):
-                    for q_id in range(i, i + n):
+                if exact_match(n_gram_list, tab_id2list[tab_id]): # 若與表格名稱完全匹配
+                    for q_id in range(i, i + n): # 標記問題中對應位置的匹配標誌
                         q_tab_match[f"{q_id},{tab_id}"] = TAB_EXACT_MATCH_FLAG
 
-            # partial match case
+            # partial match case # 部分匹配情況
             for col_id in col_id2list:
-                if partial_match(n_gram_list, col_id2list[col_id]):
+                if partial_match(n_gram_list, col_id2list[col_id]): # 若與欄位名稱部分匹配
                     for q_id in range(i, i + n):
+                        # 只有在尚未完全匹配時才標記為部分匹配
                         if f"{q_id},{col_id}" not in q_col_match:
                             q_col_match[f"{q_id},{col_id}"] = COL_PARTIAL_MATCH_FLAG
             for tab_id in tab_id2list:
-                if partial_match(n_gram_list, tab_id2list[tab_id]):
+                if partial_match(n_gram_list, tab_id2list[tab_id]): # 若與表格名稱部分匹配
                     for q_id in range(i, i + n):
+                        # 只有在尚未完全匹配時才標記為部分匹配
                         if f"{q_id},{tab_id}" not in q_tab_match:
                             q_tab_match[f"{q_id},{tab_id}"] = TAB_PARTIAL_MATCH_FLAG
-        n -= 1
+        n -= 1 # 減少 n-gram 的大小以進行更細粒度的匹配
+    # 返回匹配結果，包括問題與欄位的匹配和問題與表格的匹配
     return {"q_col_match": q_col_match, "q_tab_match": q_tab_match}
 
 

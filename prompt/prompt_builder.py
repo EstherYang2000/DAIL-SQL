@@ -94,30 +94,33 @@ def get_example_selector(selector_type: str):
     
 
 def prompt_factory(repr_type:str, k_shot: int, example_format: str, selector_type: str):
+    # 根據 repr_type 獲取表示類別（representation class）
     repr_cls = get_repr_cls(repr_type)
 
-    if k_shot == 0:
-        assert repr_cls is not None
-        cls_name = f"{repr_type}_{k_shot}-SHOT"
-        
+    if k_shot == 0:  # 當 k_shot = 0 時，創建零範例學習的 Prompt 類別
+        assert repr_cls is not None # 確保表示類別已定義
+        cls_name = f"{repr_type}_{k_shot}-SHOT" # 設定類別名稱，表示零範例學習
+        # 定義 Prompt 類別，繼承 repr_cls 和 BasicICLPrompt
         class PromptClass(repr_cls, BasicICLPrompt):
-            name = cls_name
-            NUM_EXAMPLE = k_shot
-            def __init__(self, *args, **kwargs):
-                repr_cls.__init__(self, *args, **kwargs)
+            name = cls_name  # 設置類別名稱
+            NUM_EXAMPLE = k_shot # 設置範例數量為 0
+            def __init__(self, *args, **kwargs): # 類別初始化函數
+                repr_cls.__init__(self, *args, **kwargs) # 初始化表示類別
                 # init tokenizer
-                BasicICLPrompt.__init__(self, *args, **kwargs)
-    else:
-        example_format_cls = get_example_format_cls(example_format)
-        selector_cls = get_example_selector(selector_type)
-        cls_name = f"{repr_type}_{k_shot}-SHOT_{selector_type}_{example_format}-EXAMPLE"
-        
+                BasicICLPrompt.__init__(self, *args, **kwargs) # 初始化 BasicICLPrompt 類別
+    else: # 當 k_shot > 0 時，創建多範例學習的 Prompt 類別
+        # 根據 example_format 和 selector_type 獲取相應的類別
+        example_format_cls = get_example_format_cls(example_format) # 獲取範例格式類別
+        selector_cls = get_example_selector(selector_type) # 獲取範例選擇器類別
+        cls_name = f"{repr_type}_{k_shot}-SHOT_{selector_type}_{example_format}-EXAMPLE" # 設定類別名稱，包含 k_shot、選擇器、範例格式等信息
+        # 定義 Prompt 類別，繼承 selector_cls、example_format_cls、repr_cls 和 BasicICLPrompt
         class PromptClass(selector_cls, example_format_cls, repr_cls, BasicICLPrompt):
-            name = cls_name
-            NUM_EXAMPLE = k_shot
+            name = cls_name # 設置類別名稱
+            NUM_EXAMPLE = k_shot # 設置範例數量
+            # 類別初始化函數
             def __init__(self, *args, **kwargs):
-                selector_cls.__init__(self, *args, **kwargs)
+                selector_cls.__init__(self, *args, **kwargs) # 初始化選擇器類別
                 # init tokenizer
-                BasicICLPrompt.__init__(self, *args, **kwargs)
+                BasicICLPrompt.__init__(self, *args, **kwargs) # 初始化 BasicICLPrompt 類別
     
-    return PromptClass
+    return PromptClass # 返回動態創建的 Prompt 類別

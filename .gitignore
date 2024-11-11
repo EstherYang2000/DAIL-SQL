@@ -10,5 +10,5 @@ third_party/
 # output
 vector_cache/
 results/
-
+venv/
 *zip

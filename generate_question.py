@@ -64,23 +64,26 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # load test dataset here
+    # 2. 加載測試數據集
+    print(f"2. Loading {args.data_type} dataset")
     data = load_data(args.data_type, PATH_DATA, args.pre_test_result)
 
     # Read all tables into a dict
     databases = data.get_databases()
 
-    # select the prompt
+    # 3. 選擇並生成提示（prompt）格式
+    print(f"3. Generating prompt for {args.prompt_repr}")
     prompt = prompt_factory(args.prompt_repr, args.k_shot, args.example_type, args.selector_type)(data=data, tokenizer=args.tokenizer)
 
     # format all questions
     questions = list()
     token_cnt = 0
 
-    # choose split
+    # 選擇數據集分割（train 或 test）
     func_name = f"get_{args.split}_json"
     cross_domain = args.split == "train"
-    
+    # 4. 格式化所有問題並添加到問題列表
+    print(f"4. Formatting questions for {args.split}")
     for question_json in tqdm(getattr(data, func_name)()):
         
         question_format = prompt.format(target=question_json,
@@ -88,13 +91,14 @@ if __name__ == '__main__':
                                         max_ans_len=args.max_ans_len,
                                         scope_factor=args.scope_factor,
                                         cross_domain=cross_domain)
-        
+        # 將格式化問題添加到問題列表中
         questions.append(question_format)
-        
+        # 計算當前問題的 token 數量
         token_cnt += question_format["prompt_tokens"]
 
-    # cost estimated
-    token_cnt = float(token_cnt) / len(questions)
+     # 5. 估算運行成本
+    print(f"5. Calculating cost")
+    token_cnt = float(token_cnt) / len(questions) # 計算每個 prompt 的平均 token 數
     print(f"Total {len(questions)} questions, {token_cnt} tokens per prompt, {token_cnt / len(questions)} tokens per question")
     
     n_total_tokens = len(questions) * args.max_ans_len + token_cnt
@@ -108,7 +112,8 @@ if __name__ == '__main__':
     print(f"Estimated cost for {LLM.GPT_35_TURBO}: {cost_gpt_35_turbo}")
     print(f"Estimated cost for {LLM.TEXT_DAVINCI_003}: {cost_text_davinci_003}")
 
-    # save questions
+    # 6. 保存生成的問題
+    print(f"6. Saving questions")
     task = {
         "args": vars(args),
         "costs": {
@@ -122,7 +127,7 @@ if __name__ == '__main__':
         },
         "questions": questions
     }
-    
+    # 創建保存生成問題的路徑
     path_generate = f"dataset/process/{args.data_type.upper()}-{args.split.upper()}_{prompt.name}_CTX-{args.max_ans_len}_ANS-{args.max_seq_len}"
         
     os.makedirs(path_generate, exist_ok=True)
